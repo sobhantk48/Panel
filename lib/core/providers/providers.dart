@@ -6,6 +6,9 @@ import '../../features/auth/application/auth_state.dart';
 import '../../features/users/data/users_repository.dart';
 import '../../features/users/application/users_notifier.dart';
 import '../../features/users/application/users_state.dart';
+import '../../features/dashboard/data/stats_repository.dart';
+import '../../features/dashboard/application/stats_notifier.dart';
+import '../../features/dashboard/application/stats_state.dart';
 
 final secureStorageProvider = Provider<FlutterSecureStorage>(
   (_) => const FlutterSecureStorage(),
@@ -25,4 +28,12 @@ final usersRepositoryProvider = Provider<UsersRepository>(
 
 final usersNotifierProvider = StateNotifierProvider<UsersNotifier, UsersState>(
   (ref) => UsersNotifier(ref.read(usersRepositoryProvider)),
+);
+
+final statsRepositoryProvider = Provider<StatsRepository>(
+  (ref) => StatsRepository(ref.read(apiClientProvider)),
+);
+
+final statsNotifierProvider = StateNotifierProvider<StatsNotifier, StatsState>(
+  (ref) => StatsNotifier(ref.read(statsRepositoryProvider)),
 );

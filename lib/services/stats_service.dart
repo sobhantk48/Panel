@@ -4,14 +4,16 @@ import 'secure_storage_service.dart';
 
 class StatsService {
   final Dio _dio;
+  final SecureStorageService _storage = SecureStorageService();
 
   StatsService(this._dio);
 
   Future<DashboardStats> fetchStats() async {
-    final key = await SecureStorageService.getApiKey();
+    final key = await _storage.getApiKey();
+    final apiRoute = await _storage.getApiRoute() ?? 'sync';
 
     final response = await _dio.get(
-      '/api/stats',
+      '/$apiRoute/api/stats',
       options: Options(
         headers: {
           'Authorization': 'Bearer $key',
