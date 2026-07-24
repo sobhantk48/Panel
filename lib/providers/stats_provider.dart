@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import '../models/stats_model.dart';
 import '../services/stats_service.dart';
 import 'api_provider.dart';
