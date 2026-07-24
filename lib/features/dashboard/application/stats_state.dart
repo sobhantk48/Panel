@@ -1,27 +1,27 @@
-import '../data/stats_model.dart';
+import '../data/models/stats_model.dart';
 
-enum StatsStatus { initial, loading, loaded, error }
+enum StatsStatus { initial, loading, success, error }
 
 class StatsState {
   final StatsStatus status;
   final StatsModel? stats;
-  final String? error;
+  final String? errorMessage;
 
   const StatsState({
     this.status = StatsStatus.initial,
     this.stats,
-    this.error,
+    this.errorMessage,
   });
 
   StatsState copyWith({
     StatsStatus? status,
     StatsModel? stats,
-    String? error,
+    String? errorMessage,
   }) {
     return StatsState(
       status: status ?? this.status,
       stats: stats ?? this.stats,
-      error: error,
+      errorMessage: errorMessage,
     );
   }
 }

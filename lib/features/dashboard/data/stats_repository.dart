@@ -1,13 +1,19 @@
 import '../../../core/api/api_client.dart';
-import 'stats_model.dart';
+import 'models/stats_model.dart';
 
 class StatsRepository {
-  final ApiClient _client;
+  final ApiClient _apiClient;
 
-  StatsRepository(this._client);
+  StatsRepository(this._apiClient);
 
   Future<StatsModel> getStats() async {
-    final res = await _client.get('/api/stats');
-    return StatsModel.fromJson(res.data as Map<String, dynamic>);
+    final response = await _apiClient.get('/api/stats');
+
+    if (response is Map<String, dynamic> && response['success'] == true) {
+      final statsJson = response['stats'] as Map<String, dynamic>? ?? {};
+      return StatsModel.fromJson(statsJson);
+    }
+
+    throw Exception(response['error']?.toString() ?? 'خطا در دریافت آمار');
   }
 }
