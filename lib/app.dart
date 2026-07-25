@@ -18,6 +18,34 @@ class PanelApp extends ConsumerWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.indigo.shade200),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.indigo.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.indigo, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
       ),
       builder: (context, child) => Directionality(
         textDirection: TextDirection.rtl,
@@ -39,8 +67,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        ref.read(authNotifierProvider.notifier).checkSavedSession());
+    Future.microtask(() => ref.read(authNotifierProvider.notifier).checkSavedSession());
   }
 
   @override
@@ -49,7 +76,9 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     switch (authState.status) {
       case AuthStatus.initial:
       case AuthStatus.loading:
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
       case AuthStatus.authenticated:
         return const DashboardScreen();
       case AuthStatus.unauthenticated:
