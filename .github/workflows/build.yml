@@ -20,17 +20,16 @@ jobs:
           flutter-version: '3.32.0'
           channel: stable
 
-      # پروژه فقط شامل کد Dart است؛ این خط اسکلت android را می‌سازد
+      # اسکلت اندروید هر بار از نو ساخته می‌شود
       - name: Regenerate platform scaffolding
         run: flutter create --platforms=android .
 
-      # غیرفعال‌کردن Impeller با تزریق meta-data قبل از بسته‌شدن تگ application
-      - name: Disable Impeller
+      # Impeller را بعد از ساخت اسکلت غیرفعال می‌کنیم (باگ رندر روی GPU مالی)
+      - name: Disable Impeller in AndroidManifest
         run: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
-          sed -i 's#</application>#    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />\n    </application>#' "$MANIFEST"
+          sed -i 's|</application>|    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />\n    </application>|' android/app/src/main/AndroidManifest.xml
 
-      # نمایش مانیفست در لاگ برای اطمینان از تزریق
+      # تأیید اینکه تزریق واقعاً انجام شده
       - name: Verify manifest
         run: cat android/app/src/main/AndroidManifest.xml
 
