@@ -140,7 +140,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: _statusColor(u.status).withOpacity(0.15),
+                          backgroundColor: _statusColor(u.status).withValues(alpha: 0.15),
                           child: Text(
                             u.name.isNotEmpty ? u.name[0].toUpperCase() : '?',
                             style: TextStyle(color: _statusColor(u.status), fontWeight: FontWeight.bold),
@@ -153,7 +153,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: _statusColor(u.status).withOpacity(0.15),
+                                color: _statusColor(u.status).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
