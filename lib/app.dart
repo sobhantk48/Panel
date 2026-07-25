@@ -46,7 +46,6 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
-
     switch (authState.status) {
       case AuthStatus.initial:
       case AuthStatus.loading:
