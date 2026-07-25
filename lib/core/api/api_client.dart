@@ -10,59 +10,89 @@ class ApiClient {
   ApiClient(this._storage) {
     _dio = Dio(
       BaseOptions(
-        validateStatus: (status) => status != null && status < 600,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 20),
+        // هر status code رو خودمون هندل می‌کنیم تا Dio روی 4xx/5xx throw نکنه
+        validateStatus: (_) => true,
+        headers: {'Accept': 'application/json'},
       ),
     );
 
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final key = await _storage.getApiKey();
-        if (key != null) {
-          options.headers['Authorization'] = 'Bearer $key';
-        }
-        handler.next(options);
-      },
-    ));
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final key = await _storage.getApiKey();
+          if (key != null && key.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $key';
+          }
+          handler.next(options);
+        },
+      ),
+    );
   }
 
+  // حذف اسلش‌های ابتدا و انتها
   String _clean(String s) =>
-      s.trim().replaceAll(RegExp(r'^/+|/+$'), '');
+      s.trim().replaceAll(RegExp(r'^/+'), '').replaceAll(RegExp(r'/+$'), '');
 
-  String _join(String base, List<String> parts) {
-    final b = base.trim().replaceAll(RegExp(r'/+$'), '');
-    final p = parts.map(_clean).where((x) => x.isNotEmpty).join('/');
-    return '$b/$p';
+  // چسباندن قطعات URL بدون اسلش اضافه
+  String _join(List<String> parts) {
+    final cleaned = parts
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .map(_clean)
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (cleaned.isEmpty) return '';
+    // اولین قطعه (baseUrl) اسکیم داره، بقیه رو با / می‌چسبونیم
+    return cleaned.join('/');
   }
 
   Future<String> _baseUrl() async {
     final base = await _storage.getBaseUrl() ?? '';
-    final route = await _storage.getApiRoute()??
-        ApiConstants.defaultApiRoute;
-    return _join(base, [route]);
+    final route =
+        await _storage.getApiRoute() ?? ApiConstants.defaultApiRoute;
+    return _join([base, route]);
+  }
+
+  // اگه پاسخ JSON نبود (مثلاً HTML صفحه maintenance)، خطای واضح بده
+  Map<String, dynamic> _asJson(Response response, String url) {
+    final data = response.data;
+    if (data is Map<String, dynamic>) return data;
+
+    final status = response.statusCode ?? 0;
+    final preview = data.toString();
+    final shortPreview =
+        preview.length > 120 ? '${preview.substring(0, 120)}...' : preview;
+
+    throw Exception(
+      'پاسخ نامعتبر از سرور (status $status).\n'
+      'URL: $url\n'
+      'به‌جای JSON این دریافت شد: $shortPreview',
+    );
   }
 
   Future<Response> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
-    return _dio.get(_join(await _baseUrl(), [path]),
-        queryParameters: queryParameters);
+    final url = '${await _baseUrl()}$path';
+    return _dio.get(url, queryParameters: queryParameters);
   }
 
   Future<Response> post(String path, {dynamic data}) async {
-    return _dio.post(_join(await _baseUrl(), [path]), data: data);
+    final url = '${await _baseUrl()}$path';
+    return _dio.post(url, data: data);
   }
 
   Future<Response> put(String path,
       {dynamic data, Map<String, dynamic>? queryParameters}) async {
-    return _dio.put(_join(await _baseUrl(), [path]),
-        data: data, queryParameters: queryParameters);
+    final url = '${await _baseUrl()}$path';
+    return _dio.put(url, data: data, queryParameters: queryParameters);
   }
 
   Future<Response> delete(String path,
       {Map<String, dynamic>? queryParameters}) async {
-    return _dio.delete(_join(await _baseUrl(), [path]),
-        queryParameters: queryParameters);
+    final url = '${await _baseUrl()}$path';
+    return _dio.delete(url, queryParameters: queryParameters);
   }
 
   Future<AuthResponse> login({
@@ -70,44 +100,44 @@ class ApiClient {
     required String apiRoute,
     required String key,
   }) async {
-    final url = _join(baseUrl, [apiRoute, 'api', 'auth']);
+    final cleanBase = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    final cleanRoute = _clean(apiRoute);
+    final url = '$cleanBase/$cleanRoute/api/auth';
 
-    Response response;
-    try {
-      response = await _dio.post(url, data: {'key': key});
-    } on DioException catch (e) {
-      throw Exception('خطای شبکه: ${e.message}');
-    }
+    final response = await _dio.post(
+      url,
+      data: {'key': key},
+      options: Options(
+        // مطمئن شو بادی JSON فرستاده میشه
+        contentType: Headers.jsonContentType,
+      ),
+    );
 
-    // اگه JSON نبود → صفحه maintenance یا HTML است
-    // یعنی apiRoute اشتباه است
-    if (response.data is! Map) {
-      throw Exception('ورکر صفحه maintenance برگرداند (کد ${response.statusCode}).\n'
-        'URL: $url\n'
-        'apiRoute شما ($apiRoute) با تنظیمات ورکر مطابقت ندارد.',
+    final status = response.statusCode ?? 0;
+
+    // 404 معمولاً یعنی apiRoute اشتباهه
+    if (status == 404) {
+      throw Exception(
+        'خطای 404: مسیر پیدا نشد.\n'
+        'مقدار «مسیر API» احتمالاً اشتباهه.\n'
+        'URL درخواست: $url',
       );
     }
 
-    final data = Map<String, dynamic>.from(response.data as Map);
-
-    if (response.statusCode == 404) {
-      throw Exception('مسیر یافت نشد (404).\nURL: $url');
-    }
+    final data = _asJson(response, url);
 
     if (data['success'] == true) {
       await _storage.saveCredentials(
-        baseUrl: baseUrl,
+        baseUrl: cleanBase,
         apiKey: key,
-        apiRoute: apiRoute,
+        apiRoute: cleanRoute,
       );
       return AuthResponse.fromJson(data);
     }
 
     throw Exception(
       data['error']?.toString() ??
-          (response.statusCode == 401
-              ? 'کلید نامعتبر است'
-              : 'خطا در احراز هویت (${response.statusCode})'),
+          'خطا در احراز هویت (status $status)\nURL: $url',
     );
   }
 }
