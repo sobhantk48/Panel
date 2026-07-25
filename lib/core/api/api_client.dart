@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:panel/core/storage/secure_storage_service.dart';
 import 'api_constants.dart';
@@ -44,7 +45,6 @@ class ApiClient {
         .where((p) => p.isNotEmpty)
         .toList();
     if (cleaned.isEmpty) return '';
-    // اولین قطعه (baseUrl) اسکیم داره، بقیه رو با / می‌چسبونیم
     return cleaned.join('/');
   }
 
@@ -55,10 +55,26 @@ class ApiClient {
     return _join([base, route]);
   }
 
-  // اگه پاسخ JSON نبود (مثلاً HTML صفحه maintenance)، خطای واضح بده
+  // پاسخ رو به Map تبدیل می‌کنه.
+  // اگه Dio بادی رو به‌صورت String برگردونده باشه، خودمون jsonDecode می‌کنیم.
   Map<String, dynamic> _asJson(Response response, String url) {
     final data = response.data;
+
+    // حالت اول: از قبل Map هست
     if (data is Map<String, dynamic>) return data;
+
+    // حالت دوم: رشته‌ست، شاید JSON خام باشه
+    if (data is String) {
+      final trimmed = data.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is Map<String, dynamic>) return decoded;
+        } catch (_) {
+          // decode نشد، می‌افته پایین به خطا
+        }
+      }
+    }
 
     final status = response.statusCode ?? 0;
     final preview = data.toString();
@@ -108,14 +124,12 @@ class ApiClient {
       url,
       data: {'key': key},
       options: Options(
-        // مطمئن شو بادی JSON فرستاده میشه
         contentType: Headers.jsonContentType,
       ),
     );
 
     final status = response.statusCode ?? 0;
 
-    // 404 معمولاً یعنی apiRoute اشتباهه
     if (status == 404) {
       throw Exception(
         'خطای 404: مسیر پیدا نشد.\n'
