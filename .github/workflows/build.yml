@@ -20,15 +20,21 @@ jobs:
           flutter-version: '3.32.0'
           channel: stable
 
+      # پروژه فقط شامل کد Dart است؛ این خط اسکلت android را می‌سازد
       - name: Regenerate platform scaffolding
         run: flutter create --platforms=android .
 
-      - name: Disable Impeller (fixes gray TextFormField on Adreno GPUs)
+      # غیرفعال‌کردن Impeller با تزریق meta-data قبل از بسته‌شدن تگ application
+      - name: Disable Impeller
         run: |
-          sed -i 's|</application>|    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />\n    </application>|' android/app/src/main/AndroidManifest.xml
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          sed -i 's#</application>#    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />\n    </application>#' "$MANIFEST"
+
+      # نمایش مانیفست در لاگ برای اطمینان از تزریق
+      - name: Verify manifest
+        run: cat android/app/src/main/AndroidManifest.xml
 
       - run: flutter pub get
-
       - run: flutter build apk --release --no-tree-shake-icons
 
       - uses: actions/upload-artifact@v4
