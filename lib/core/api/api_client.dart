@@ -10,90 +10,59 @@ class ApiClient {
   ApiClient(this._storage) {
     _dio = Dio(
       BaseOptions(
-        // اجازه می‌دهیم خودمان status را بررسی کنیم تا 404/401 exception پرت نکند
-        validateStatus: (status) => status != null && status < 500,
+        validateStatus: (status) => status != null && status < 600,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
       ),
     );
 
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final key = await _storage.getApiKey();
-
-          if (key != null) {
-            options.headers['Authorization'] = 'Bearer $key';
-          }
-
-          handler.next(options);
-        },
-      ),
-    );
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final key = await _storage.getApiKey();
+        if (key != null) {
+          options.headers['Authorization'] = 'Bearer $key';
+        }
+        handler.next(options);
+      },
+    ));
   }
 
-  /// حذف اسلش‌های اضافی ابتدا و انتها
-  String _normalize(String value) {
-    return value.trim().replaceAll(RegExp(r'^/+|/+\$'), '');
-  }
+  String _clean(String s) =>
+      s.trim().replaceAll(RegExp(r'^/+|/+$'), '');
 
-  /// ساخت URL تمیز از اجزای مسیر
-  String _buildUrl(String base, List<String> parts) {
-    final cleanBase = base.trim().replaceAll(RegExp(r'/+\$'), '');
-    final cleanParts = parts
-        .map(_normalize)
-        .where((p) => p.isNotEmpty)
-        .join('/');
-
-    return '$cleanBase/$cleanParts';
+  String _join(String base, List<String> parts) {
+    final b = base.trim().replaceAll(RegExp(r'/+$'), '');
+    final p = parts.map(_clean).where((x) => x.isNotEmpty).join('/');
+    return '$b/$p';
   }
 
   Future<String> _baseUrl() async {
     final base = await _storage.getBaseUrl() ?? '';
-    final route =
-        await _storage.getApiRoute() ?? ApiConstants.defaultApiRoute;
-
-    return _buildUrl(base, [route]);
+    final route = await _storage.getApiRoute()??
+        ApiConstants.defaultApiRoute;
+    return _join(base, [route]);
   }
 
-  Future<Response> get(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    return _dio.get(
-      _buildUrl(await _baseUrl(), [path]),
-      queryParameters: queryParameters,
-    );
+  Future<Response> get(String path,
+      {Map<String, dynamic>? queryParameters}) async {
+    return _dio.get(_join(await _baseUrl(), [path]),
+        queryParameters: queryParameters);
   }
 
-  Future<Response> post(
-    String path, {
-    dynamic data,
-  }) async {
-    return _dio.post(
-      _buildUrl(await _baseUrl(), [path]),
-      data: data,
-    );
+  Future<Response> post(String path, {dynamic data}) async {
+    return _dio.post(_join(await _baseUrl(), [path]), data: data);
   }
 
-  Future<Response> put(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    return _dio.put(
-      _buildUrl(await _baseUrl(), [path]),
-      data: data,
-      queryParameters: queryParameters,
-    );
+  Future<Response> put(String path,
+      {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return _dio.put(_join(await _baseUrl(), [path]),
+        data: data, queryParameters: queryParameters);
   }
 
-  Future<Response> delete(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    return _dio.delete(
-      _buildUrl(await _baseUrl(), [path]),
-      queryParameters: queryParameters,
-    );
+  Future<Response> delete(String path,
+      {Map<String, dynamic>? queryParameters}) async {
+    return _dio.delete(_join(await _baseUrl(), [path]),
+        queryParameters: queryParameters);
   }
 
   Future<AuthResponse> login({
@@ -101,27 +70,29 @@ class ApiClient {
     required String apiRoute,
     required String key,
   }) async {
-    final url = _buildUrl(baseUrl, [apiRoute, 'api', 'auth']);
+    final url = _join(baseUrl, [apiRoute, 'api', 'auth']);
 
-    final response = await _dio.post(
-      url,
-      data: {'key': key},
-    );
+    Response response;
+    try {
+      response = await _dio.post(url, data: {'key': key});
+    } on DioException catch (e) {
+      throw Exception('خطای شبکه: ${e.message}');
+    }
 
-    // اگر پاسخ اصلاً JSON نبود (مثلاً صفحه 404 یا maintenance با متن/HTML)
+    // اگه JSON نبود → صفحه maintenance یا HTML است
+    // یعنی apiRoute اشتباه است
     if (response.data is! Map) {
-      if (response.statusCode == 404) {
-        throw Exception(
-          'مسیر API اشتباه است (404). مقدار «مسیر API» را با apiRoute واقعی ورکر مطابقت بده.',
-        );
-      }
-
-      throw Exception(
-        'پاسخ نامعتبر از سرور (کد ${response.statusCode}). آدرس ورکر و مسیر API را بررسی کن.',
+      throw Exception('ورکر صفحه maintenance برگرداند (کد ${response.statusCode}).\n'
+        'URL: $url\n'
+        'apiRoute شما ($apiRoute) با تنظیمات ورکر مطابقت ندارد.',
       );
     }
 
     final data = Map<String, dynamic>.from(response.data as Map);
+
+    if (response.statusCode == 404) {
+      throw Exception('مسیر یافت نشد (404).\nURL: $url');
+    }
 
     if (data['success'] == true) {
       await _storage.saveCredentials(
@@ -129,16 +100,14 @@ class ApiClient {
         apiKey: key,
         apiRoute: apiRoute,
       );
-
       return AuthResponse.fromJson(data);
     }
 
-    // کلید نامعتبر: ورکر {"success": false} با کد 401 برمی‌گرداند
     throw Exception(
       data['error']?.toString() ??
           (response.statusCode == 401
               ? 'کلید نامعتبر است'
-              : 'خطا در احراز هویت'),
+              : 'خطا در احراز هویت (${response.statusCode})'),
     );
   }
 }
