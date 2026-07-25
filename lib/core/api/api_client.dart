@@ -15,7 +15,7 @@ class ApiClient {
       BaseOptions(
         connectTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
-        // پاسخ رشته‌ای هم می‌گیریم تا خودمون پارس کنیم
+        // رشته می‌گیریم و خودمون تصمیم می‌گیریم چطور پارس کنیم
         responseType: ResponseType.plain,
         validateStatus: (_) => true,
       ),
@@ -58,11 +58,32 @@ class ApiClient {
     return _join([base, route]);
   }
 
-  // retry ساده روی خطای شبکه (DNS flaky روی موبایل‌دیتا)
-  Future<Response> _retry(Future<Response> Function() run) async {
+  // پارسر مقاوم: رشته خام را به Map/List تبدیل می‌کند
+  dynamic _decodeBody(dynamic raw) {
+    if (raw is Map || raw is List) return raw;
+    if (raw is String) {
+      final text = raw.trim();
+      if (text.isEmpty) return <String, dynamic>{};
+      if (text.startsWith('{') || text.startsWith('[')) {
+        try {
+          return jsonDecode(text);
+        } catch (_) {}
+      }
+      throw Exception(
+        'پاسخ سرور JSON نبود (احتمالاً صفحه HTML/خطا). پیش‌نمایش: '
+        '${text.substring(0, text.length > 150 ? 150 : text.length)}',
+      );
+    }
+    return raw;
+  }
+
+  // اجرای درخواست + retry شبکه + دیکود کردن body
+  Future<Response> _run(Future<Response> Function() request) async {
     for (var attempt = 1; attempt <= 3; attempt++) {
       try {
-        return await run();
+        final res = await request();
+        res.data = _decodeBody(res.data);
+        return res;
       } on DioException catch (e) {
         final isNetwork = e.error is SocketException ||
             e.type == DioExceptionType.connectionError ||
@@ -79,14 +100,14 @@ class ApiClient {
   }
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
-    return _retry(() async => _dio.get(
+    return _run(() async => _dio.get(
           _join([await _baseUrl(), path]),
           queryParameters: queryParameters,
         ));
   }
 
   Future<Response> post(String path, {dynamic data}) {
-    return _retry(() async => _dio.post(
+    return _run(() async => _dio.post(
           _join([await _baseUrl(), path]),
           data: data,
         ));
@@ -94,7 +115,7 @@ class ApiClient {
 
   Future<Response> put(String path,
       {dynamic data, Map<String, dynamic>? queryParameters}) {
-    return _retry(() async => _dio.put(
+    return _run(() async => _dio.put(
           _join([await _baseUrl(), path]),
           data: data,
           queryParameters: queryParameters,
@@ -103,7 +124,7 @@ class ApiClient {
 
   Future<Response> delete(String path,
       {Map<String, dynamic>? queryParameters}) {
-    return _retry(() async => _dio.delete(
+    return _run(() async => _dio.delete(
           _join([await _baseUrl(), path]),
           queryParameters: queryParameters,
         ));
@@ -116,9 +137,9 @@ class ApiClient {
   }) async {
     final url = _join([baseUrl, apiRoute, 'api', 'auth']);
 
-    final response = await _retry(() => _dio.post(url, data: {'key': key}));
+    final response = await _run(() => _dio.post(url, data: {'key': key}));
 
-    final data = _asJson(response.data);
+    final data = response.data as Map<String, dynamic>;
 
     if (data['success'] == true) {
       await _storage.saveCredentials(
@@ -129,30 +150,5 @@ class ApiClient {
       return AuthResponse.fromJson(data);
     }
     throw Exception(data['error']?.toString() ?? 'خطا در احراز هویت');
-  }
-
-  // پارسر مقاوم: اگر رشته خام بود، به Map تبدیلش کن
-  Map<String, dynamic> _asJson(dynamic raw) {
-    if (raw is Map<String, dynamic>) return raw;
-    if (raw is String) {
-      final text = raw.trim();
-      if (text.startsWith('{') || text.startsWith('[')) {
-        final decoded = _tryDecode(text);
-        if (decoded is Map<String, dynamic>) return decoded;
-      }
-      throw Exception(
-          'پاسخ سرور JSON نبود (احتمالاً صفحه HTML). پیش‌نمایش: '
-          '${text.substring(0, text.length > 120 ? 120 : text.length)}');
-    }
-    throw Exception('نوع پاسخ نامعتبر: ${raw.runtimeType}');
-  }
-
-  dynamic _tryDecode(String text) {
-    try {
-      // ignore: unnecessary_this
-      return const JsonCodec().decode(text);
-    } catch (_) {
-      return null;
-    }
   }
 }
