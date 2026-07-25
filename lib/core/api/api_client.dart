@@ -1,16 +1,17 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:panel/core/storage/secure_storage_service.dart';
 import 'api_constants.dart';
+import 'models/auth_response.dart';
 
 class ApiClient {
   late final Dio _dio;
-  final FlutterSecureStorage _storage;
+  final SecureStorageService _storage;
 
   ApiClient(this._storage) {
     _dio = Dio();
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final key = await _storage.read(key: ApiConstants.keyApiKey);
+        final key = await _storage.getApiKey();
         if (key != null) {
           options.headers['Authorization'] = 'Bearer $key';
         }
@@ -20,9 +21,9 @@ class ApiClient {
   }
 
   Future<String> _baseUrl() async {
-    final base = await _storage.read(key: ApiConstants.keyBaseUrl) ?? '';
-    final route = await _storage.read(key: ApiConstants.keyApiRoute) ?? ApiConstants.defaultApiRoute;
-    return '$base$route';
+    final base = await _storage.getBaseUrl() ?? '';
+    final route = await _storage.getApiRoute() ?? ApiConstants.defaultApiRoute;
+    return '$base/$route';
   }
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
@@ -41,8 +42,24 @@ class ApiClient {
     return _dio.delete('${await _baseUrl()}$path', queryParameters: queryParameters);
   }
 
-  // برای auth
-  Future<Response> postAuth(String baseUrl, String apiRoute, Map<String, dynamic> data) async {
-    return _dio.post('$baseUrl$apiRoute/api/auth', data: data);
+  Future<AuthResponse> login({
+    required String baseUrl,
+    required String apiRoute,
+    required String key,
+  }) async {
+    final response = await _dio.post(
+      '$baseUrl/$apiRoute/api/auth',
+      data: {'key': key},
+    );
+    final data = response.data as Map<String, dynamic>;
+    if (data['success'] == true) {
+      await _storage.saveCredentials(
+        baseUrl: baseUrl,
+        apiKey: key,
+        apiRoute: apiRoute,
+      );
+      return AuthResponse.fromJson(data);
+    }
+    throw Exception(data['error']?.toString() ?? 'خطا در احراز هویت');
   }
 }

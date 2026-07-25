@@ -8,12 +8,12 @@ class StatsRepository {
 
   Future<StatsModel> getStats() async {
     final response = await _apiClient.get('/api/stats');
+    final data = response.data as Map<String, dynamic>;
 
-    if (response is Map<String, dynamic> && response['success'] == true) {
-      final statsJson = response['stats'] as Map<String, dynamic>? ?? {};
-      return StatsModel.fromJson(statsJson);
+    if (data['success'] == true) {
+      return StatsModel.fromJson(data['stats'] as Map<String, dynamic>? ?? {});
     }
 
-    throw Exception(response['error']?.toString() ?? 'خطا در دریافت آمار');
+    throw Exception(data['error']?.toString() ?? 'خطا در دریافت آمار');
   }
 }
