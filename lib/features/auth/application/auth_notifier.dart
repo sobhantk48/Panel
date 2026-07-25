@@ -14,25 +14,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// چون /api/auth استیت‌لس هست، دوباره با همون کلید ذخیره‌شده لاگین می‌کنیم
   /// تا هم اعتبار کلید تایید بشه هم داده‌ی تازه بیاد.
   Future<void> checkSavedSession() async {
-    final hasCreds = await _storage.hasCredentials();
-    if (!hasCreds) {
-      state = state.copyWith(status: AuthStatus.unauthenticated);
-      return;
-    }
-
     state = state.copyWith(status: AuthStatus.loading);
     try {
+      final hasCreds = await _storage.hasCredentials();
+      if (!hasCreds) {
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+        return;
+      }
+
       final baseUrl = await _storage.getBaseUrl();
-      final apiRoute = await _storage.getApiRoute() ?? ApiConstants.defaultApiRoute;
+      final apiRoute =
+          await _storage.getApiRoute() ?? ApiConstants.defaultApiRoute;
       final apiKey = await _storage.getApiKey();
 
+      if (baseUrl == null || apiKey == null) {
+        await _storage.clear();
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+        return;
+      }
+
       final auth = await _apiClient.login(
-        baseUrl: baseUrl!,
+        baseUrl: baseUrl,
         apiRoute: apiRoute,
-        key: apiKey!,
+        key: apiKey,
       );
 
-      state = state.copyWith(status: AuthStatus.authenticated, authResponse: auth);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        authResponse: auth,
+      );
     } catch (e) {
       await _storage.clear();
       state = state.copyWith(
@@ -47,16 +57,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String apiRoute,
     required String key,
   }) async {
-    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    state = state.copyWith(
+      status: AuthStatus.loading,
+      errorMessage: null,
+    );
     try {
       final auth = await _apiClient.login(
         baseUrl: baseUrl,
         apiRoute: apiRoute,
         key: key,
       );
-      state = state.copyWith(status: AuthStatus.authenticated, authResponse: auth);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        authResponse: auth,
+      );
     } catch (e) {
-      state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
     }
   }
 
