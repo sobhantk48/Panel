@@ -10,33 +10,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._apiClient, this._storage) : super(const AuthState());
 
-  /// موقع باز شدن اپ صدا زده میشه: چک می‌کنه قبلاً وارد شده یا نه.
-  /// چون /api/auth استیت‌لس هست، دوباره با همون کلید ذخیره‌شده لاگین می‌کنیم
-  /// تا هم اعتبار کلید تایید بشه هم داده‌ی تازه بیاد.
   Future<void> checkSavedSession() async {
-    state = state.copyWith(status: AuthStatus.loading);
     try {
       final hasCreds = await _storage.hasCredentials();
+
       if (!hasCreds) {
         state = state.copyWith(status: AuthStatus.unauthenticated);
         return;
       }
 
+      // در حین بررسی، status روی initial می‌ماند تا AuthGate اسپینر استارت‌آپ نشان دهد
       final baseUrl = await _storage.getBaseUrl();
       final apiRoute =
           await _storage.getApiRoute() ?? ApiConstants.defaultApiRoute;
       final apiKey = await _storage.getApiKey();
 
-      if (baseUrl == null || apiKey == null) {
-        await _storage.clear();
-        state = state.copyWith(status: AuthStatus.unauthenticated);
-        return;
-      }
-
       final auth = await _apiClient.login(
-        baseUrl: baseUrl,
+        baseUrl: baseUrl!,
         apiRoute: apiRoute,
-        key: apiKey,
+        key: apiKey!,
       );
 
       state = state.copyWith(
@@ -57,16 +49,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String apiRoute,
     required String key,
   }) async {
-    state = state.copyWith(
-      status: AuthStatus.loading,
-      errorMessage: null,
-    );
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
     try {
       final auth = await _apiClient.login(
         baseUrl: baseUrl,
         apiRoute: apiRoute,
         key: key,
       );
+
       state = state.copyWith(
         status: AuthStatus.authenticated,
         authResponse: auth,
