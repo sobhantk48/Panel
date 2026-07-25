@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'features/auth/application/auth_notifier.dart';
+import 'core/providers/providers.dart';
 import 'features/auth/application/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
@@ -20,9 +20,6 @@ class PanelApp extends StatelessWidget {
         Locale('fa', 'IR'),
         Locale('en', 'US'),
       ],
-      // این بخش کلیدی بود و قبلاً نبود؛ بدون این delegateها
-      // ویجت‌های Material روی locale فارسی کرش می‌کنند و release
-      // مود صفحه خاکستری نشان می‌دهد.
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
