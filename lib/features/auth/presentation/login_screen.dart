@@ -14,9 +14,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _baseUrlController = TextEditingController();
-  final _apiRouteController = TextEditingController(text: ApiConstants.defaultApiRoute);
+  final _apiRouteController = TextEditingController(
+    text: ApiConstants.defaultApiRoute,
+  );
   final _keyController = TextEditingController();
-
   bool _obscureKey = true;
 
   @override
@@ -27,102 +28,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  String? _validateBaseUrl(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'آدرس ورکر را وارد کنید';
-    }
-    final uri = Uri.tryParse(value.trim());
-    if (uri == null || !uri.isAbsolute || !(uri.scheme == 'http' || uri.scheme == 'https')) {
-      return 'آدرس باید با http:// یا https:// شروع شود';
-    }
-    return null;
-  }
-
-  String? _validateApiRoute(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'مسیر API را وارد کنید (مثلاً /sync)';
-    }
-    if (!value.trim().startsWith('/')) {
-      return 'مسیر باید با / شروع شود';
-    }
-    return null;
-  }
-
-  String? _validateKey(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'کلید را وارد کنید';
-    }
-    return null;
-  }
-
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-
     var baseUrl = _baseUrlController.text.trim();
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
-    }
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.substring(0, baseUrl.length - 1);
     var apiRoute = _apiRouteController.text.trim();
-    if (!apiRoute.startsWith('/')) {
-      apiRoute = '/$apiRoute';
-    }
-
+    if (!apiRoute.startsWith('/')) apiRoute = '/$apiRoute';
     ref.read(authNotifierProvider.notifier).login(
-          baseUrl: baseUrl,
-          apiRoute: apiRoute,
-          key: _keyController.text.trim(),
-        );
+      baseUrl: baseUrl,
+      apiRoute: apiRoute,
+      key: _keyController.text.trim(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+    ref.listen<AuthState>(authNotifierProvider, (_, next) {
       if (next.status == AuthStatus.error && next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(next.errorMessage!),
+          backgroundColor: Colors.red.shade700,
+        ));
       }
     });
 
-    final authState = ref.watch(authNotifierProvider);
-    final isLoading = authState.status == AuthStatus.loading;
+    final isLoading = ref.watch(authNotifierProvider).status == AuthStatus.loading;
 
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.dns_rounded,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  const Icon(Icons.dns_rounded, size: 64, color: Colors.indigo),
                   const SizedBox(height: 16),
-                  Text(
-                    'ورود به پنل نهان',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
+                  const Text('ورود به پنل نهان',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  Text(
-                    'اطلاعات ورکر خود را وارد کنید',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                  ),
+                  const Text('اطلاعات ورکر خود را وارد کنید',
+                      style: TextStyle(color: Colors.grey)),
                   const SizedBox(height: 32),
-
                   TextFormField(
                     controller: _baseUrlController,
                     enabled: !isLoading,
@@ -131,13 +80,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     decoration: const InputDecoration(
                       labelText: 'آدرس ورکر',
                       hintText: 'https://example.workers.dev',
-                      prefixIcon: Icon(Icons.link),
                       border: OutlineInputBorder(),
                     ),
-                    validator: _validateBaseUrl,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'آدرس الزامی است';
+                      final uri = Uri.tryParse(v.trim());
+                      if (uri == null || !uri.isAbsolute) return 'آدرس معتبر نیست';
+                      if (!['http', 'https'].contains(uri.scheme)) return 'فقط http یا https';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
-
                   TextFormField(
                     controller: _apiRouteController,
                     enabled: !isLoading,
@@ -145,44 +98,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     decoration: const InputDecoration(
                       labelText: 'مسیر API',
                       hintText: '/sync',
-                      prefixIcon: Icon(Icons.route),
                       border: OutlineInputBorder(),
                     ),
-                    validator: _validateApiRoute,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'مسیر الزامی است';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
-
                   TextFormField(
                     controller: _keyController,
                     enabled: !isLoading,
                     obscureText: _obscureKey,
-                    textDirection: TextDirection.ltr,
                     decoration: InputDecoration(
                       labelText: 'کلید (Master Key یا Panel Key)',
-                      prefixIcon: const Icon(Icons.key),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(_obscureKey ? Icons.visibility : Icons.visibility_off),
                         onPressed: () => setState(() => _obscureKey = !_obscureKey),
                       ),
                     ),
-                    validator: _validateKey,
                     onFieldSubmitted: (_) => _submit(),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'کلید الزامی است';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 24),
-
-                  FilledButton(
-                    onPressed: isLoading ? null : _submit,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: isLoading ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('ورود'),
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('ورود', style: TextStyle(fontSize: 16)),
                   ),
                 ],
               ),
