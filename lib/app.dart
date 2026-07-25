@@ -15,38 +15,42 @@ class PanelApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       locale: const Locale('fa', 'IR'),
       supportedLocales: const [Locale('fa', 'IR'), Locale('en', 'US')],
-      localizationsDelegates: const [
-        // اگر flutter_localizations اضافه شد اینجا فعال کن
-      ],
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
-        fontFamily: 'Vazirmatn', // اگر فونت فارسی اضافه کردید
       ),
-      builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
-      },
+      builder: (context, child) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: child!,
+      ),
       home: const AuthGate(),
     );
   }
 }
 
-class AuthGate extends ConsumerWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() =>
+        ref.read(authNotifierProvider.notifier).checkSavedSession());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
 
     switch (authState.status) {
       case AuthStatus.initial:
       case AuthStatus.loading:
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       case AuthStatus.authenticated:
         return const DashboardScreen();
       case AuthStatus.unauthenticated:
