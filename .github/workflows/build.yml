@@ -20,6 +20,11 @@ jobs:
           flutter-version: '3.32.0'
           channel: stable
 
+      # پروژه backup فقط شامل کد Dart است و اسکلت android/ios ندارد
+      # این دستور اسکلت گمشده را بازسازی می‌کند بدون دست‌زدن به lib/ و pubspec.yaml
+      - name: Regenerate platform scaffolding
+        run: flutter create --platforms=android .
+
       - run: flutter pub get
       - run: flutter build apk --release --no-tree-shake-icons
 
