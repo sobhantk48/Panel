@@ -16,19 +16,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void initState() {
     super.initState();
     Future.microtask(
-      () => ref.read(statsNotifierProvider.notifier).loadStats(),
-    );
+        () => ref.read(statsNotifierProvider.notifier).loadStats());
   }
 
   @override
   Widget build(BuildContext context) {
+    // نمایش SnackBar وقتی رفرش با موفقیت تمام شد
+    ref.listen<StatsState>(statsNotifierProvider, (prev, next) {
+      final wasLoading = prev?.status == StatsStatus.loading;
+      if (wasLoading && next.status == StatsStatus.success) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('اطلاعات به‌روزرسانی شد'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+      }
+    });
+
     final state = ref.watch(statsNotifierProvider);
     final isRefreshing =
         state.status == StatsStatus.loading && state.stats != null;
 
     return Column(
       children: [
-        if (isRefreshing) const LinearProgressIndicator(minHeight: 2),
+        // نوار پیشرفت بالای صفحه حین رفرش
+        if (isRefreshing) const LinearProgressIndicator(minHeight: 3),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () =>
@@ -50,7 +65,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return _buildContent(state.stats!);
 
       case StatsStatus.error:
-        if (state.stats != null) return _buildContent(state.stats!);
         return ListView(
           children: [
             const SizedBox(height: 100),
@@ -61,15 +75,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 state.errorMessage ?? 'خطای نامشخص',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.red),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: FilledButton.icon(
-                onPressed: () =>
-                    ref.read(statsNotifierProvider.notifier).refresh(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('تلاش مجدد'),
               ),
             ),
           ],
@@ -248,7 +253,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: color),
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           ),
         ],
       ),
