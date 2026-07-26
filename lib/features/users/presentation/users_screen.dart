@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/providers.dart';
 import '../application/users_state.dart';
 import '../data/user_model.dart';
 import 'user_form_screen.dart';
+import 'user_detail_screen.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -36,6 +38,20 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     _debounce = Timer(const Duration(milliseconds: 400), () {
       ref.read(usersNotifierProvider.notifier).loadUsers(query: v.isEmpty ? null : v);
     });
+  }
+
+  void _copySubscription(NahanUser user) {
+    final url = user.subscriptionUrl;
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لینک اشتراک موجود نیست')),
+      );
+      return;
+    }
+    Clipboard.setData(ClipboardData(text: url));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('لینک اشتراک کپی شد'), duration: Duration(seconds: 1)),
+    );
   }
 
   Color _statusColor(String status) => switch (status) {
@@ -148,6 +164,10 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       child: ListTile(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => UserDetailScreen(user: u)),
+                        ),
                         leading: CircleAvatar(
                           backgroundColor: _statusColor(u.status).withValues(alpha: 0.15),
                           child: Text(
@@ -157,7 +177,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         ),
                         title: Row(
                           children: [
-                            Text(u.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Flexible(
+                              child: Text(
+                                u.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -187,9 +213,18 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                               );
                             } else if (v == 'delete') {
                               _confirmDelete(u);
+                            } else if (v == 'copy') {
+                              _copySubscription(u);
+                            } else if (v == 'detail') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => UserDetailScreen(user: u)),
+                              );
                             }
                           },
                           itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'detail', child: Text('جزئیات')),
+                            PopupMenuItem(value: 'copy', child: Text('کپی لینک اشتراک')),
                             PopupMenuItem(value: 'edit', child: Text('ویرایش')),
                             PopupMenuItem(value: 'delete', child: Text('حذف', style: TextStyle(color: Colors.red))),
                           ],
