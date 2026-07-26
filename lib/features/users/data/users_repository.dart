@@ -38,13 +38,16 @@ class UsersRepository {
     await _client.delete('/api/users', queryParameters: {'id': id});
   }
 
-  /// فعال/غیرفعال کردن کاربر از طریق همان PUT /api/users
+  /// وضعیت کاربر. سرور فقط 'active' و 'paused' را قبول می‌کند.
   Future<NahanUser> setStatus(String id, String status) {
     return updateUser(id, {'status': status});
   }
 
-  /// ریست مصرف کاربر
-  Future<NahanUser> resetUsage(String id) {
-    return updateUser(id, {'reset_usage': true});
+  /// ریست مصرف: POST /api/users?id=<id>&action=reset
+  Future<void> resetUsage(String id) async {
+    await _client.post(
+      '/api/users',
+      queryParameters: {'id': id, 'action': 'reset'},
+    );
   }
 }

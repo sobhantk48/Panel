@@ -17,7 +17,6 @@ class UsersNotifier extends StateNotifier<UsersState> {
     }
   }
 
-  /// Alias برای دکمه Refresh در main_screen
   Future<void> refresh() => loadUsers();
 
   Future<bool> createUser(Map<String, dynamic> data) async {
@@ -53,21 +52,18 @@ class UsersNotifier extends StateNotifier<UsersState> {
     }
   }
 
-  /// فعال/غیرفعال کردن کاربر.
-  /// اگر [enable] داده نشود، وضعیت فعلی از state خوانده و برعکس می‌شود.
+  /// فعال/توقف کاربر. سرور فقط active و paused را می‌پذیرد.
+  /// اگر [enable] پاس داده نشود، وضعیت فعلی برعکس می‌شود.
   Future<bool> toggleUser(String id, [bool? enable]) async {
     try {
       bool target;
       if (enable != null) {
         target = enable;
       } else {
-        final current = state.users.firstWhere(
-          (u) => u.id == id,
-          orElse: () => state.users.first,
-        );
-        target = current.status != 'active';
+        final idx = state.users.indexWhere((u) => u.id == id);
+        target = idx == -1 ? true : state.users[idx].status != 'active';
       }
-      await _repo.setStatus(id, target ? 'active' : 'disabled');
+      await _repo.setStatus(id, target ? 'active' : 'paused');
       await loadUsers();
       return true;
     } catch (e) {
@@ -76,7 +72,6 @@ class UsersNotifier extends StateNotifier<UsersState> {
     }
   }
 
-  /// ریست مصرف کاربر
   Future<bool> resetUsage(String id) async {
     try {
       await _repo.resetUsage(id);
