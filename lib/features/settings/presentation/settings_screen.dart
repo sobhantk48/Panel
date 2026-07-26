@@ -12,82 +12,102 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('تنظیمات')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const _SectionTitle('ظاهر برنامه'),
-          Card(
-            child: Column(
-              children: [
-                RadioListTile<ThemeMode>(
-                  value: ThemeMode.system,
-                  groupValue: themeMode,
-                  title: const Text('پیش‌فرض سیستم'),
-                  onChanged: (v) =>
-                      ref.read(themeModeProvider.notifier).setMode(v!),
-                ),
-                RadioListTile<ThemeMode>(
-                  value: ThemeMode.light,
-                  groupValue: themeMode,
-                  title: const Text('روشن'),
-                  onChanged: (v) =>
-                      ref.read(themeModeProvider.notifier).setMode(v!),
-                ),
-                RadioListTile<ThemeMode>(
-                  value: ThemeMode.dark,
-                  groupValue: themeMode,
-                  title: const Text('تاریک'),
-                  onChanged: (v) =>
-                      ref.read(themeModeProvider.notifier).setMode(v!),
-                ),
-              ],
-            ),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const _SectionTitle('ظاهر برنامه'),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Column(
+            children: [
+              RadioListTile<ThemeMode>(
+                value: ThemeMode.system,
+                groupValue: themeMode,
+                secondary: const Icon(Icons.brightness_auto_outlined),
+                title: const Text('پیش‌فرض سیستم'),
+                onChanged: (v) =>
+                    ref.read(themeModeProvider.notifier).setMode(v!),
+              ),
+              RadioListTile<ThemeMode>(
+                value: ThemeMode.light,
+                groupValue: themeMode,
+                secondary: const Icon(Icons.light_mode_outlined),
+                title: const Text('روشن'),
+                onChanged: (v) =>
+                    ref.read(themeModeProvider.notifier).setMode(v!),
+              ),
+              RadioListTile<ThemeMode>(
+                value: ThemeMode.dark,
+                groupValue: themeMode,
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: const Text('تاریک'),
+                onChanged: (v) =>
+                    ref.read(themeModeProvider.notifier).setMode(v!),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const _SectionTitle('زبان'),
-          Card(
-            child: Column(
-              children: [
-                RadioListTile<String?>(
-                  value: null,
-                  groupValue: locale?.languageCode,
-                  title: const Text('پیش‌فرض سیستم'),
-                  onChanged: (_) =>
-                      ref.read(localeProvider.notifier).setLocale(null),
-                ),
-                RadioListTile<String?>(
-                  value: 'fa',
-                  groupValue: locale?.languageCode,
-                  title: const Text('فارسی'),
-                  onChanged: (_) => ref
-                      .read(localeProvider.notifier)
-                      .setLocale(const Locale('fa')),
-                ),
-                RadioListTile<String?>(
-                  value: 'en',
-                  groupValue: locale?.languageCode,
-                  title: const Text('English'),
-                  onChanged: (_) => ref
-                      .read(localeProvider.notifier)
-                      .setLocale(const Locale('en')),
-                ),
-              ],
-            ),
+        ),
+        const SizedBox(height: 20),
+        const _SectionTitle('زبان'),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Column(
+            children: [
+              RadioListTile<String?>(
+                value: null,
+                groupValue: locale?.languageCode,
+                secondary: const Icon(Icons.translate_outlined),
+                title: const Text('پیش‌فرض سیستم'),
+                onChanged: (_) =>
+                    ref.read(localeProvider.notifier).setLocale(null),
+              ),
+              RadioListTile<String?>(
+                value: 'fa',
+                groupValue: locale?.languageCode,
+                secondary: const Text('🇮🇷', style: TextStyle(fontSize: 22)),
+                title: const Text('فارسی'),
+                onChanged: (_) => ref
+                    .read(localeProvider.notifier)
+                    .setLocale(const Locale('fa')),
+              ),
+              RadioListTile<String?>(
+                value: 'en',
+                groupValue: locale?.languageCode,
+                secondary: const Text('🇬🇧', style: TextStyle(fontSize: 22)),
+                title: const Text('English'),
+                onChanged: (_) => ref
+                    .read(localeProvider.notifier)
+                    .setLocale(const Locale('en')),
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          FilledButton.tonalIcon(
-            style: FilledButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-              minimumSize: const Size.fromHeight(48),
+        ),
+        const SizedBox(height: 20),
+        const _SectionTitle('حساب کاربری'),
+        Card(
+          margin: EdgeInsets.zero,
+          child: ListTile(
+            leading: Icon(
+              Icons.logout,
+              color: Theme.of(context).colorScheme.error,
             ),
-            icon: const Icon(Icons.logout),
-            label: const Text('خروج از حساب'),
-            onPressed: () => _logout(context, ref),
+            title: Text(
+              'خروج از حساب',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            onTap: () => _logout(context, ref),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: Text(
+            'Panel v1.0.0',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).hintColor,
+                ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -126,8 +146,9 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8, right: 4),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
             ),
       ),
     );
