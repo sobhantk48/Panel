@@ -15,10 +15,8 @@ class UsersRepository {
   }
 
   Future<NahanUser> getUser(String idOrName) async {
-    final res = await _client.get(
-      '/api/users',
-      queryParameters: {'id': idOrName},
-    );
+    final res =
+        await _client.get('/api/users', queryParameters: {'id': idOrName});
     return NahanUser.fromJson(res.data['user']);
   }
 
@@ -28,20 +26,16 @@ class UsersRepository {
   }
 
   Future<NahanUser> updateUser(String id, Map<String, dynamic> data) async {
-    final res = await _client.put(
-      '/api/users',
-      data: data,
-      queryParameters: {'id': id},
-    );
+    final res = await _client
+        .put('/api/users', data: data, queryParameters: {'id': id});
     return NahanUser.fromJson(res.data['user']);
   }
 
-  /// DELETE /api/users?id=<id>
   Future<void> deleteUser(String id) async {
     await _client.delete('/api/users', queryParameters: {'id': id});
   }
 
-  /// POST /api/users?id=<id>&action=toggle  -> isPaused را معکوس می‌کند
+  /// فعال/غیرفعال کردن کاربر. سرور با POST و action=toggle کار می‌کند.
   Future<void> toggleUser(String id) async {
     await _client.post(
       '/api/users',
@@ -49,8 +43,8 @@ class UsersRepository {
     );
   }
 
-  /// POST /api/users?id=<id>&action=reset  -> reqs و dReqs را صفر می‌کند
-  Future<void> resetTraffic(String id) async {
+  /// صفر کردن مصرف کاربر. سرور با POST و action=reset کار می‌کند.
+  Future<void> resetUsage(String id) async {
     await _client.post(
       '/api/users',
       queryParameters: {'id': id, 'action': 'reset'},
