@@ -205,7 +205,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        e.key,
+                        _shortKey(e.key),
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontFamily: 'monospace',
@@ -213,6 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Chip(label: Text('${e.connects} اتصال')),
                   ],
                 ),
@@ -222,6 +223,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  // کوتاه‌سازی UUID/کلید طولانی به فرمت خوانا: 8کاراکتر اول…4کاراکتر آخر
+  String _shortKey(String key) {
+    if (key.length <= 16) return key;
+    return '${key.substring(0, 8)}…${key.substring(key.length - 4)}';
   }
 
   Widget _infoRow(String label, String value) {
