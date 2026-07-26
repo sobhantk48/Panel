@@ -26,8 +26,11 @@ class UsersRepository {
   }
 
   Future<NahanUser> updateUser(String id, Map<String, dynamic> data) async {
-    final res = await _client
-        .put('/api/users', data: data, queryParameters: {'id': id});
+    final res = await _client.put(
+      '/api/users',
+      data: data,
+      queryParameters: {'id': id},
+    );
     return NahanUser.fromJson(res.data['user']);
   }
 
@@ -35,19 +38,13 @@ class UsersRepository {
     await _client.delete('/api/users', queryParameters: {'id': id});
   }
 
-  /// فعال/غیرفعال کردن کاربر. سرور با POST و action=toggle کار می‌کند.
-  Future<void> toggleUser(String id) async {
-    await _client.post(
-      '/api/users',
-      queryParameters: {'id': id, 'action': 'toggle'},
-    );
+  /// فعال/غیرفعال کردن کاربر از طریق همان PUT /api/users
+  Future<NahanUser> setStatus(String id, String status) {
+    return updateUser(id, {'status': status});
   }
 
-  /// صفر کردن مصرف کاربر. سرور با POST و action=reset کار می‌کند.
-  Future<void> resetUsage(String id) async {
-    await _client.post(
-      '/api/users',
-      queryParameters: {'id': id, 'action': 'reset'},
-    );
+  /// ریست مصرف کاربر
+  Future<NahanUser> resetUsage(String id) {
+    return updateUser(id, {'reset_usage': true});
   }
 }
