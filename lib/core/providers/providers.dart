@@ -9,6 +9,9 @@ import '../../features/users/application/users_state.dart';
 import '../../features/dashboard/data/stats_repository.dart';
 import '../../features/dashboard/application/stats_notifier.dart';
 import '../../features/dashboard/application/stats_state.dart';
+import '../../features/logs/data/logs_repository.dart';
+import '../../features/logs/application/logs_notifier.dart';
+import '../../features/logs/application/logs_state.dart';
 
 final secureStorageProvider = Provider<SecureStorageService>(
   (_) => SecureStorageService(),
@@ -19,7 +22,10 @@ final apiClientProvider = Provider<ApiClient>(
 );
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(ref.read(apiClientProvider), ref.read(secureStorageProvider)),
+  (ref) => AuthNotifier(
+    ref.read(apiClientProvider),
+    ref.read(secureStorageProvider),
+  ),
 );
 
 final usersRepositoryProvider = Provider<UsersRepository>(
@@ -36,4 +42,15 @@ final statsRepositoryProvider = Provider<StatsRepository>(
 
 final statsNotifierProvider = StateNotifierProvider<StatsNotifier, StatsState>(
   (ref) => StatsNotifier(ref.read(statsRepositoryProvider)),
+);
+
+final logsRepositoryProvider = Provider<LogsRepository>(
+  (ref) => LogsRepository(
+    ref.read(apiClientProvider),
+    ref.read(secureStorageProvider),
+  ),
+);
+
+final logsNotifierProvider = StateNotifierProvider<LogsNotifier, LogsState>(
+  (ref) => LogsNotifier(ref.read(logsRepositoryProvider)),
 );
