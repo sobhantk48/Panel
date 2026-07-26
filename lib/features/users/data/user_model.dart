@@ -31,6 +31,8 @@ class NahanUser {
   final String? cleanIp;
   final String? userMode;
   final String? userPorts;
+  final String? userNodes;
+  final String? nat64;
   final String? userPanelUrl;
   final int? connLimit;
   final int createdAt;
@@ -50,6 +52,8 @@ class NahanUser {
     this.cleanIp,
     this.userMode,
     this.userPorts,
+    this.userNodes,
+    this.nat64,
     this.userPanelUrl,
     this.connLimit,
     required this.createdAt,
@@ -70,6 +74,8 @@ class NahanUser {
         cleanIp: j['cleanIp'],
         userMode: j['userMode'],
         userPorts: j['userPorts'],
+        userNodes: j['userNodes'],
+        nat64: j['nat64'],
         userPanelUrl: j['userPanelUrl'],
         connLimit: j['connLimit'],
         createdAt: j['createdAt'] ?? 0,
@@ -78,9 +84,9 @@ class NahanUser {
         subscriptionUrl: j['subscriptionUrl'],
       );
 
-  // trafficLimit و dailyLimit برای فرم (برعکس تبدیل worker)
   double? get trafficLimitGb =>
       limitTotalReq != null ? limitTotalReq! / 6000 : null;
+
   double? get dailyLimitGb =>
       limitDailyReq != null ? limitDailyReq! / 6000 : null;
 }
