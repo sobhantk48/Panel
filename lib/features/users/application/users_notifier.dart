@@ -18,34 +18,35 @@ class UsersNotifier extends StateNotifier<UsersState> {
   }
 
   Future<bool> createUser(Map<String, dynamic> data) async {
-    try {
-      await _repo.createUser(data);
-      await loadUsers();
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return false;
-    }
+    return _mutate(() => _repo.createUser(data));
   }
 
   Future<bool> updateUser(String id, Map<String, dynamic> data) async {
-    try {
-      await _repo.updateUser(id, data);
-      await loadUsers();
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return false;
-    }
+    return _mutate(() => _repo.updateUser(id, data));
   }
 
   Future<bool> deleteUser(String id) async {
+    return _mutate(() => _repo.deleteUser(id));
+  }
+
+  /// فعال / متوقف کردن کاربر
+  Future<bool> toggleUser(String id) async {
+    return _mutate(() => _repo.toggleUser(id));
+  }
+
+  /// بازنشانی مصرف (reqs و dReqs)
+  Future<bool> resetTraffic(String id) async {
+    return _mutate(() => _repo.resetTraffic(id));
+  }
+
+  /// اجرای یک عملیات نوشتنی، سپس تازه‌سازی لیست.
+  Future<bool> _mutate(Future<void> Function() action) async {
     try {
-      await _repo.deleteUser(id);
+      await action();
       await loadUsers();
       return true;
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(status: UsersStatus.error, error: e.toString());
       return false;
     }
   }
