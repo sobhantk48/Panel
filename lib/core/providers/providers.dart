@@ -22,10 +22,7 @@ final apiClientProvider = Provider<ApiClient>(
 );
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(
-    ref.read(apiClientProvider),
-    ref.read(secureStorageProvider),
-  ),
+  (ref) => AuthNotifier(ref.read(apiClientProvider), ref.read(secureStorageProvider)),
 );
 
 final usersRepositoryProvider = Provider<UsersRepository>(
@@ -45,10 +42,7 @@ final statsNotifierProvider = StateNotifierProvider<StatsNotifier, StatsState>(
 );
 
 final logsRepositoryProvider = Provider<LogsRepository>(
-  (ref) => LogsRepository(
-    ref.read(apiClientProvider),
-    ref.read(secureStorageProvider),
-  ),
+  (ref) => LogsRepository(ref.read(apiClientProvider)),
 );
 
 final logsNotifierProvider = StateNotifierProvider<LogsNotifier, LogsState>(

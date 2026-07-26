@@ -5,8 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/providers/providers.dart';
-import '../application/users_notifier.dart';
-import '../application/users_state.dart';
 import '../data/user_model.dart';
 import 'user_form_screen.dart';
 
