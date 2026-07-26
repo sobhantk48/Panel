@@ -15,7 +15,6 @@ class ApiClient {
       BaseOptions(
         connectTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
-        // رشته می‌گیریم و خودمون تصمیم می‌گیریم چطور پارس کنیم
         responseType: ResponseType.plain,
         validateStatus: (_) => true,
       ),
@@ -41,11 +40,9 @@ class ApiClient {
     ));
   }
 
-  // حذف اسلش‌های اضافه از دو سر یک قطعه
   String _clean(String? s) =>
       (s ?? '').trim().replaceAll(RegExp(r'^/+|/+$'), '');
 
-  // چسباندن قطعات URL با یک اسلش تمیز
   String _join(List<String> parts) {
     final base = parts.first.trim().replaceAll(RegExp(r'/+$'), '');
     final rest = parts.skip(1).map(_clean).where((e) => e.isNotEmpty);
@@ -58,7 +55,6 @@ class ApiClient {
     return _join([base, route]);
   }
 
-  // پارسر مقاوم: رشته خام را به Map/List تبدیل می‌کند
   dynamic _decodeBody(dynamic raw) {
     if (raw is Map || raw is List) return raw;
     if (raw is String) {
@@ -77,7 +73,6 @@ class ApiClient {
     return raw;
   }
 
-  // اجرای درخواست + retry شبکه + دیکود کردن body
   Future<Response> _run(Future<Response> Function() request) async {
     for (var attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -99,22 +94,33 @@ class ApiClient {
     throw Exception('unreachable');
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) {
     return _run(() async => _dio.get(
           _join([await _baseUrl(), path]),
           queryParameters: queryParameters,
         ));
   }
 
-  Future<Response> post(String path, {dynamic data}) {
+  Future<Response> post(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) {
     return _run(() async => _dio.post(
           _join([await _baseUrl(), path]),
           data: data,
+          queryParameters: queryParameters,
         ));
   }
 
-  Future<Response> put(String path,
-      {dynamic data, Map<String, dynamic>? queryParameters}) {
+  Future<Response> put(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) {
     return _run(() async => _dio.put(
           _join([await _baseUrl(), path]),
           data: data,
@@ -122,8 +128,10 @@ class ApiClient {
         ));
   }
 
-  Future<Response> delete(String path,
-      {Map<String, dynamic>? queryParameters}) {
+  Future<Response> delete(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) {
     return _run(() async => _dio.delete(
           _join([await _baseUrl(), path]),
           queryParameters: queryParameters,
