@@ -17,11 +17,18 @@ class LogsNotifier extends StateNotifier<LogsState> {
     }
   }
 
+  /// Alias برای سازگاری با اکشن Refresh در main_screen
+  Future<void> refresh() => loadLogs();
+
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
   }
 
   void setType(String type) {
     state = state.copyWith(selectedType: type);
+  }
+
+  void clearFilters() {
+    state = state.copyWith(searchQuery: '', selectedType: 'all');
   }
 }

@@ -17,6 +17,8 @@ class UsersNotifier extends StateNotifier<UsersState> {
     }
   }
 
+  Future<void> refresh() => loadUsers();
+
   Future<bool> createUser(Map<String, dynamic> data) async {
     try {
       await _repo.createUser(data);
@@ -42,28 +44,6 @@ class UsersNotifier extends StateNotifier<UsersState> {
   Future<bool> deleteUser(String id) async {
     try {
       await _repo.deleteUser(id);
-      await loadUsers();
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return false;
-    }
-  }
-
-  Future<bool> toggleUser(String id) async {
-    try {
-      await _repo.toggleUser(id);
-      await loadUsers();
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return false;
-    }
-  }
-
-  Future<bool> resetUsage(String id) async {
-    try {
-      await _repo.resetUsage(id);
       await loadUsers();
       return true;
     } catch (e) {
