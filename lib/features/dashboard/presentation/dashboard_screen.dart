@@ -15,12 +15,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(statsNotifierProvider.notifier).loadStats());
+    Future.microtask(
+      () => ref.read(statsNotifierProvider.notifier).loadStats(),
+    );
+  }
+
+  Future<void> _doRefresh() async {
+    await ref.read(statsNotifierProvider.notifier).refresh();
+    if (!mounted) return;
+    final st = ref.read(statsNotifierProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          st.status == StatsStatus.error
+              ? 'خطا در به‌روزرسانی'
+              : 'به‌روزرسانی شد',
+        ),
+        duration: const Duration(milliseconds: 900),
+        backgroundColor:
+            st.status == StatsStatus.error ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(statsNotifierProvider);
+    final isRefreshing =
+        state.status == StatsStatus.loading && state.stats != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -28,13 +50,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.read(statsNotifierProvider.notifier).refresh(),
+            onPressed: isRefreshing ? null : _doRefresh,
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(statsNotifierProvider.notifier).refresh(),
-        child: _buildBody(state),
+      body: Column(
+        children: [
+          if (isRefreshing) const LinearProgressIndicator(minHeight: 2),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _doRefresh,
+              child: _buildBody(state),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -47,7 +76,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         return _buildContent(state.stats!);
+
       case StatsStatus.error:
+        if (state.stats != null) return _buildContent(state.stats!);
         return ListView(
           children: [
             const SizedBox(height: 100),
@@ -60,8 +91,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 style: const TextStyle(color: Colors.red),
               ),
             ),
+            const SizedBox(height: 16),
+            Center(
+              child: FilledButton.icon(
+                onPressed: _doRefresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('تلاش مجدد'),
+              ),
+            ),
           ],
         );
+
       case StatsStatus.success:
         return _buildContent(state.stats!);
     }
@@ -98,10 +138,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const SizedBox(width: 8),
                 Text(
                   system.isPaused ? 'متوقف شده' : 'فعال',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 const Spacer(),
-                Text('نسخه ${system.version}', style: TextStyle(color: Colors.grey.shade600)),
+                Text(
+                  'نسخه ${system.version}',
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
               ],
             ),
             const Divider(height: 24),
@@ -120,7 +166,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('کاربران', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'کاربران',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -144,7 +193,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('ترافیک', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'ترافیک',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const Divider(height: 24),
             _infoRow('کل درخواست‌ها', '${traffic.totalRequests}'),
             _infoRow('کل حجم', '${traffic.totalGB.toStringAsFixed(2)} GB'),
@@ -163,7 +215,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('اتصالات کاربران', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'اتصالات کاربران',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const Divider(height: 24),
             ...usage.map(
               (e) => Padding(
@@ -174,7 +229,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Text(
                         e.key,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                     Chip(label: Text('${e.connects} اتصال')),
@@ -207,13 +265,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           Text(
             '$value',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 11, color: color),
           ),
         ],
       ),
