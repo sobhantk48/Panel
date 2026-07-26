@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/providers/providers.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
+import 'l10n/app_localizations.dart';
+import 'features/auth/application/auth_notifier.dart';
 import 'features/auth/application/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/main/main_screen.dart';
+import 'core/providers/providers.dart';
 
 class PanelApp extends ConsumerWidget {
   const PanelApp({super.key});
@@ -14,20 +17,17 @@ class PanelApp extends ConsumerWidget {
     return MaterialApp(
       title: 'پنل نهان',
       debugShowCheckedModeBanner: false,
-      locale: const Locale('fa', 'IR'),
-      supportedLocales: const [
-        Locale('fa', 'IR'),
-        Locale('en', 'US'),
-      ],
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
+      ),
+      locale: const Locale('fa'),
+      supportedLocales: const [Locale('fa'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.indigo,
-      ),
       builder: (context, child) => Directionality(
         textDirection: TextDirection.rtl,
         child: child!,
@@ -55,21 +55,16 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
+    final status = ref.watch(authNotifierProvider).status;
 
-    switch (authState.status) {
-      // فقط بررسی اولیه‌ی سشن هنگام باز شدن برنامه اسپینر تمام‌صفحه نشان می‌دهد
+    switch (status) {
+      case AuthStatus.authenticated:
+        return const MainScreen();
+      case AuthStatus.loading:
       case AuthStatus.initial:
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );
-
-      case AuthStatus.authenticated:
-        return const DashboardScreen();
-
-      // مهم: loading اینجا LoginScreen را حذف نمی‌کند.
-      // خود LoginScreen اسپینر دکمه را مدیریت می‌کند و controllerها حفظ می‌شوند.
-      case AuthStatus.loading:
       case AuthStatus.unauthenticated:
       case AuthStatus.error:
         return const LoginScreen();
