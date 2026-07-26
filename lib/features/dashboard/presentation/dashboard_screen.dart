@@ -20,51 +20,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Future<void> _doRefresh() async {
-    await ref.read(statsNotifierProvider.notifier).refresh();
-    if (!mounted) return;
-    final st = ref.read(statsNotifierProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          st.status == StatsStatus.error
-              ? 'خطا در به‌روزرسانی'
-              : 'به‌روزرسانی شد',
-        ),
-        duration: const Duration(milliseconds: 900),
-        backgroundColor:
-            st.status == StatsStatus.error ? Colors.red : Colors.green,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(statsNotifierProvider);
     final isRefreshing =
         state.status == StatsStatus.loading && state.stats != null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('داشبورد'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: isRefreshing ? null : _doRefresh,
+    return Column(
+      children: [
+        if (isRefreshing) const LinearProgressIndicator(minHeight: 2),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(statsNotifierProvider.notifier).refresh(),
+            child: _buildBody(state),
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (isRefreshing) const LinearProgressIndicator(minHeight: 2),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _doRefresh,
-              child: _buildBody(state),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -94,7 +66,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 16),
             Center(
               child: FilledButton.icon(
-                onPressed: _doRefresh,
+                onPressed: () =>
+                    ref.read(statsNotifierProvider.notifier).refresh(),
                 icon: const Icon(Icons.refresh),
                 label: const Text('تلاش مجدد'),
               ),
