@@ -63,30 +63,41 @@ class NahanUser {
   });
 
   factory NahanUser.fromJson(Map<String, dynamic> j) => NahanUser(
-        id: j['id'],
-        name: j['name'],
-        limitTotalReq: j['limitTotalReq'],
-        limitDailyReq: j['limitDailyReq'],
-        expiryMs: j['expiryMs'],
-        notes: j['notes'],
-        maxConfigs: j['maxConfigs'],
-        proxyIp: j['proxyIp'],
-        cleanIp: j['cleanIp'],
-        userMode: j['userMode'],
-        userPorts: j['userPorts'],
-        userNodes: j['userNodes'],
-        nat64: j['nat64'],
-        userPanelUrl: j['userPanelUrl'],
-        connLimit: j['connLimit'],
-        createdAt: j['createdAt'] ?? 0,
-        usage: j['usage'] != null ? UserUsage.fromJson(j['usage']) : null,
-        status: j['status'] ?? 'active',
-        subscriptionUrl: j['subscriptionUrl'],
+        id: j['id']?.toString() ?? '',
+        name: j['name']?.toString() ?? '',
+        limitTotalReq: _toInt(j['limitTotalReq']),
+        limitDailyReq: _toInt(j['limitDailyReq']),
+        expiryMs: _toInt(j['expiryMs']),
+        notes: j['notes']?.toString(),
+        maxConfigs: _toInt(j['maxConfigs']),
+        proxyIp: j['proxyIp']?.toString(),
+        cleanIp: j['cleanIp']?.toString(),
+        userMode: j['userMode']?.toString(),
+        userPorts: j['userPorts']?.toString(),
+        userNodes: j['userNodes']?.toString(),
+        nat64: j['nat64']?.toString(),
+        userPanelUrl: j['userPanelUrl']?.toString(),
+        connLimit: _toInt(j['connLimit']),
+        createdAt: _toInt(j['createdAt']) ?? 0,
+        usage: j['usage'] != null
+            ? UserUsage.fromJson(Map<String, dynamic>.from(j['usage']))
+            : null,
+        status: j['status']?.toString() ?? 'active',
+        subscriptionUrl: j['subscriptionUrl']?.toString(),
       );
+
+  static int? _toInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is double) return v.round();
+    return int.tryParse(v.toString());
+  }
 
   double? get trafficLimitGb =>
       limitTotalReq != null ? limitTotalReq! / 6000 : null;
 
   double? get dailyLimitGb =>
       limitDailyReq != null ? limitDailyReq! / 6000 : null;
+
+  bool get isActive => status == 'active';
 }
