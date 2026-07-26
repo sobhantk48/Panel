@@ -32,34 +32,23 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('تنظیمات'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('دربارهٔ برنامه'),
-            subtitle: const Text('پنل مدیریت نهان'),
-          ),
-          const Divider(),
-          ListTile(
-            leading: Icon(
-              Icons.logout,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            title: Text(
-              'خروج از حساب',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-            onTap: () => _confirmLogout(context, ref),
-          ),
-        ],
-      ),
+    final errorColor = Theme.of(context).colorScheme.error;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        const ListTile(
+          leading: Icon(Icons.info_outline),
+          title: Text('دربارهٔ برنامه'),
+          subtitle: Text('پنل مدیریت نهان'),
+        ),
+        const Divider(),
+        ListTile(
+          leading: Icon(Icons.logout, color: errorColor),
+          title: Text('خروج از حساب', style: TextStyle(color: errorColor)),
+          onTap: () => _confirmLogout(context, ref),
+        ),
+      ],
     );
   }
 }
