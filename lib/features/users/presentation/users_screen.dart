@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/providers.dart';
@@ -14,6 +15,7 @@ class UsersScreen extends ConsumerStatefulWidget {
 
 class _UsersScreenState extends ConsumerState<UsersScreen> {
   final _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -23,8 +25,17 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String v) {
+    setState(() {});
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      ref.read(usersNotifierProvider.notifier).loadUsers(query: v.isEmpty ? null : v);
+    });
   }
 
   Color _statusColor(String status) => switch (status) {
@@ -98,6 +109,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
+                          _debounce?.cancel();
                           _searchController.clear();
                           ref.read(usersNotifierProvider.notifier).loadUsers();
                           setState(() {});
@@ -105,10 +117,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       )
                     : null,
               ),
-              onChanged: (v) {
-                setState(() {});
-                ref.read(usersNotifierProvider.notifier).loadUsers(query: v.isEmpty ? null : v);
-              },
+              onChanged: _onSearchChanged,
             ),
           ),
         ),
