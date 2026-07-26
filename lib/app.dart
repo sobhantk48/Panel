@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'l10n/app_localizations.dart';
+import 'core/providers/providers.dart';
 import 'core/settings/settings_providers.dart';
-import 'features/auth/application/auth_notifier.dart';
 import 'features/auth/application/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/main/main_screen.dart';
@@ -17,27 +18,29 @@ class PanelApp extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
 
     return MaterialApp(
-      title: 'پنل نهان',
+      title: 'Panel',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
       darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.indigo,
           brightness: Brightness.dark,
         ),
-        useMaterial3: true,
       ),
       locale: locale,
-      supportedLocales: const [Locale('fa'), Locale('en')],
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      supportedLocales: const [Locale('fa'), Locale('en')],
       home: const AuthGate(),
     );
   }
@@ -54,8 +57,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(authNotifierProvider.notifier).checkSavedSession(),
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ref.read(authNotifierProvider.notifier).checkSavedSession(),
     );
   }
 
@@ -66,8 +69,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     switch (status) {
       case AuthStatus.authenticated:
         return const MainScreen();
-      case AuthStatus.loading:
       case AuthStatus.initial:
+      case AuthStatus.loading:
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );

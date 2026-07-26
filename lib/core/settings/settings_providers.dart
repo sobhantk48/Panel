@@ -1,94 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'settings_service.dart';
-
-final settingsServiceProvider = Provider<SettingsService>(
-  (_) => SettingsService(),
-);
-
-/// ---------------- Theme Mode ----------------
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  final SettingsService _service;
-
-  ThemeModeNotifier(this._service) : super(ThemeMode.system) {
+  ThemeModeNotifier() : super(ThemeMode.system) {
     _load();
   }
 
+  static const _key = 'theme_mode';
+
   Future<void> _load() async {
-    final saved = await _service.readThemeMode();
-    state = _fromString(saved);
+    final prefs = await SharedPreferences.getInstance();
+    final v = prefs.getString(_key);
+    state = switch (v) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
   }
 
   Future<void> setMode(ThemeMode mode) async {
     state = mode;
-    await _service.writeThemeMode(_toString(mode));
-  }
-
-  static ThemeMode _fromString(String? value) {
-    switch (value) {
-      case 'light':
-        return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  static String _toString(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'light';
-      case ThemeMode.dark:
-        return 'dark';
-      case ThemeMode.system:
-        return 'system';
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, mode.name);
   }
 }
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
-  (ref) => ThemeModeNotifier(ref.read(settingsServiceProvider)),
-);
-
-/// ---------------- Locale ----------------
-/// مقدار null یعنی «پیروی از زبان سیستم».
-
 class LocaleNotifier extends StateNotifier<Locale?> {
-  final SettingsService _service;
-
-  LocaleNotifier(this._service) : super(const Locale('fa')) {
+  LocaleNotifier() : super(null) {
     _load();
   }
 
+  static const _key = 'locale_code';
+
   Future<void> _load() async {
-    final saved = await _service.readLocale();
-    state = _fromString(saved);
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(_key);
+    state = (code == null || code.isEmpty) ? null : Locale(code);
   }
 
   Future<void> setLocale(Locale? locale) async {
     state = locale;
-    await _service.writeLocale(locale?.languageCode ?? 'system');
-  }
-
-  static Locale? _fromString(String? value) {
-    switch (value) {
-      case 'en':
-        return const Locale('en');
-      case 'fa':
-        return const Locale('fa');
-      case 'system':
-        return null;
-      default:
-        // پیش‌فرض برنامه فارسی است
-        return const Locale('fa');
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, locale?.languageCode ?? '');
   }
 }
 
-final localeProvider = StateNotifierProvider<LocaleNotifier, Locale?>(
-  (ref) => LocaleNotifier(ref.read(settingsServiceProvider)),
-);
+final themeModeProvider =
+    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((_) => ThemeModeNotifier());
+
+final localeProvider =
+    StateNotifierProvider<LocaleNotifier, Locale?>((_) => LocaleNotifier());
