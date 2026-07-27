@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'l10n/app_localizations.dart';
 import 'core/providers/providers.dart';
-import 'core/settings/settings_providers.dart';
+import 'core/settings/app_settings.dart';
 import 'features/auth/application/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/main/main_screen.dart';
@@ -12,35 +11,34 @@ import 'features/main/main_screen.dart';
 class PanelApp extends ConsumerWidget {
   const PanelApp({super.key});
 
+  static const _seed = Colors.indigo;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-    final locale = ref.watch(localeProvider);
+    final settings = ref.watch(appSettingsProvider);
 
     return MaterialApp(
-      title: 'Panel',
+      title: 'پنل نهان',
       debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
+      themeMode: settings.themeMode,
       theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: _seed),
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
       ),
       darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
+          seedColor: _seed,
           brightness: Brightness.dark,
         ),
+        useMaterial3: true,
       ),
-      locale: locale,
+      locale: settings.locale,
+      supportedLocales: const [Locale('fa'), Locale('en')],
       localizationsDelegates: const [
-        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('fa'), Locale('en')],
       home: const AuthGate(),
     );
   }
@@ -57,8 +55,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => ref.read(authNotifierProvider.notifier).checkSavedSession(),
+    Future.microtask(
+      () => ref.read(authNotifierProvider.notifier).checkSavedSession(),
     );
   }
 
@@ -69,8 +67,8 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     switch (status) {
       case AuthStatus.authenticated:
         return const MainScreen();
-      case AuthStatus.initial:
       case AuthStatus.loading:
+      case AuthStatus.initial:
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );
