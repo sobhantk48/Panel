@@ -31,7 +31,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   static const _kThemeKey = 'app_theme_mode';
   static const _kLangKey = 'app_language_code';
 
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   /// خواندن تنظیمات ذخیره‌شده در اجرای برنامه
   Future<void> load() async {
