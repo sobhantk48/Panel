@@ -4,7 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'l10n/app_localizations.dart';
 import 'core/settings/app_settings.dart';
-import 'features/auth/application/auth_notifier.dart';
+// authNotifierProvider اینجا زندگی می‌کند، نه در auth_notifier.dart
+import 'core/providers/providers.dart';
 import 'features/auth/application/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/main/main_screen.dart';
@@ -35,10 +36,8 @@ class PanelApp extends ConsumerWidget {
         useMaterial3: true,
       ),
 
-      // تم فعال از تنظیمات خوانده می‌شود
+      // تم و زبان فعال از تنظیمات ذخیره‌شده خوانده می‌شوند
       themeMode: settings.themeMode,
-
-      // زبان فعال از تنظیمات خوانده می‌شود
       locale: settings.locale,
       supportedLocales: AppLocalizations.supportedLocales,
 
@@ -50,8 +49,8 @@ class PanelApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      // نکته: Directionality دستی حذف شد.
-      // MaterialApp خودش از روی locale جهت درست (RTL برای fa / LTR برای en) را اعمال می‌کند.
+      // Directionality دستی حذف شد؛
+      // MaterialApp خودش از روی locale جهت درست را اعمال می‌کند (fa → RTL، en → LTR)
       home: const AuthGate(),
     );
   }
@@ -68,6 +67,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
   @override
   void initState() {
     super.initState();
+    // بررسی نشست ذخیره‌شده بعد از اولین فریم
     Future.microtask(
       () => ref.read(authNotifierProvider.notifier).checkSavedSession(),
     );
@@ -75,16 +75,18 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    final status = ref.watch(authNotifierProvider).status;
+    final AuthStatus status = ref.watch(authNotifierProvider).status;
 
     switch (status) {
       case AuthStatus.authenticated:
         return const MainScreen();
-      case AuthStatus.loading:
+
       case AuthStatus.initial:
+      case AuthStatus.loading:
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );
+
       case AuthStatus.unauthenticated:
       case AuthStatus.error:
         return const LoginScreen();
