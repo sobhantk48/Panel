@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'core/providers/providers.dart';
+import 'l10n/app_localizations.dart';
 import 'core/settings/app_settings.dart';
+import 'features/auth/application/auth_notifier.dart';
 import 'features/auth/application/auth_state.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/main/main_screen.dart';
 
 class PanelApp extends ConsumerWidget {
   const PanelApp({super.key});
-
-  static const _seed = Colors.indigo;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,25 +19,39 @@ class PanelApp extends ConsumerWidget {
     return MaterialApp(
       title: 'پنل نهان',
       debugShowCheckedModeBanner: false,
-      themeMode: settings.themeMode,
+
+      // تم روشن
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: _seed),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
+
+      // تم تاریک
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: _seed,
+          seedColor: Colors.indigo,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
       ),
+
+      // تم فعال از تنظیمات خوانده می‌شود
+      themeMode: settings.themeMode,
+
+      // زبان فعال از تنظیمات خوانده می‌شود
       locale: settings.locale,
-      supportedLocales: const [Locale('fa'), Locale('en')],
+      supportedLocales: AppLocalizations.supportedLocales,
+
+      // دلیگیت ترجمه‌های خودمان + دلیگیت‌های داخلی فلاتر
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+
+      // نکته: Directionality دستی حذف شد.
+      // MaterialApp خودش از روی locale جهت درست (RTL برای fa / LTR برای en) را اعمال می‌کند.
       home: const AuthGate(),
     );
   }
