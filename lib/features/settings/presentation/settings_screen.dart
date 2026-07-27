@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/application/auth_notifier.dart';
+import '../../../core/providers/providers.dart';
 import '../../keys/presentation/keys_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
